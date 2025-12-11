@@ -1,0 +1,31 @@
+# Dynablox Configuration (based on original ROS parameters)
+
+ever_free:
+  voxel_size: 0.2              # Voxel size in meters
+  min_free_observations: 5     # burn_in_period: 5 frames before ever-free
+  free_space_distance: 0.3     # tsdf_occupancy_threshold (0.3 = 1.5 voxels)
+  min_consecutive_occupied: 2  # temporal_buffer + 1
+  max_range: 20.0              # Original uses 20m (not 50m!)
+  enable_decay: true           # Enable voxel decay over time
+  decay_threshold_frames: 150  # counter_to_reset
+
+clustering:
+  cluster_distance: 0.5        # Maximum distance between cluster points
+  min_cluster_size: 20         # Original: 20
+  max_cluster_size: 200000     # Original: 200000
+  min_cluster_height: 0.0      # min_extent
+  max_cluster_height: 200.0    # max_extent
+  min_cluster_volume: 0.0      # Minimum volume (cubic meters)
+  max_cluster_volume: 200000.0 # Maximum volume
+
+tracking:
+  max_association_distance: 1.0  # max_tracking_distance (original: 1m)
+  min_detections_to_confirm: 1   # min_track_duration
+  max_misses_before_delete: 5    # Missed frames before deletion
+  use_velocity_prediction: true  # Use velocity for prediction
+  velocity_smoothing: 0.5        # Velocity smoothing factor
+
+# General settings
+enable_clustering: true
+enable_tracking: true
+verbose: true

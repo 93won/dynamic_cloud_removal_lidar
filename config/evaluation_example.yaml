@@ -1,0 +1,23 @@
+# Evaluation Tool Configuration Example
+
+# Input data
+data_dir: "/path/to/kitti/sequences/00/velodyne"
+poses_file: "/path/to/kitti/sequences/00/poses.txt"
+output_dir: "/path/to/output"
+
+# Method configuration
+method_config: "config/dynablox_default.yaml"
+
+# Data format
+point_cloud_format: "bin"    # "bin" for KITTI, "ply" for other datasets
+poses_format: "kitti"        # "kitti" or "tum"
+
+# Processing range
+start_frame: 0
+end_frame: -1                # -1 = all frames
+frame_step: 1
+
+# Output options
+save_results: false          # Save filtered point clouds
+visualize: true              # Enable visualization
+verbose: false               # Verbose output
