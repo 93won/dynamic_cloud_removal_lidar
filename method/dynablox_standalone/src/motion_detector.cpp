@@ -106,12 +106,34 @@ DetectionResult MotionDetector::processPointcloud(
         info.distance = (global_cloud[i] - sensor_origin).norm();
     }
     
+    // Update ever-free voxels FIRST (so ever_free flags are set)
+    ever_free_integrator_->updateEverFreeVoxels(frame_counter_);
+    
+    // Count ever-free voxels for debugging
+    size_t ever_free_count = 0;
+    size_t total_voxels = 0;
+    voxblox::BlockIndexList all_blocks;
+    tsdf_layer_->getAllAllocatedBlocks(&all_blocks);
+    for (const auto& block_idx : all_blocks) {
+        const auto& block = tsdf_layer_->getBlockByIndex(block_idx);
+        for (size_t i = 0; i < block.num_voxels(); ++i) {
+            const auto& voxel = block.getVoxelByLinearIndex(i);
+            if (voxel.weight > 0) {
+                total_voxels++;
+                if (voxel.ever_free) ever_free_count++;
+            }
+        }
+    }
+    
+    if (config_.verbose) {
+        std::cout << "[Frame " << frame_counter_ << "] Blocks: " << all_blocks.size()
+                  << ", Observed voxels: " << total_voxels
+                  << ", Ever-free: " << ever_free_count << std::endl;
+    }
+    
     // Find occupied ever-free voxels (seeds)
     std::vector<voxblox::VoxelKey> ever_free_seeds =
         findOccupiedEverFreeVoxels(point_map, frame_counter_, cloud_info);
-    
-    // Update ever-free voxels
-    ever_free_integrator_->updateEverFreeVoxels(frame_counter_);
     
     // Perform clustering if past burn-in
     std::vector<Cluster> clusters;
@@ -251,6 +273,8 @@ std::vector<voxblox::VoxelKey> MotionDetector::findOccupiedEverFreeVoxels(
         return seeds;  // No seeds during burn-in
     }
     
+    size_t checked = 0, has_ever_free = 0, has_occupied = 0;
+    
     for (const auto& block_pair : point_map) {
         const voxblox::BlockIndex& block_idx = block_pair.first;
         
@@ -264,6 +288,10 @@ std::vector<voxblox::VoxelKey> MotionDetector::findOccupiedEverFreeVoxels(
             const voxblox::VoxelIndex& voxel_idx = voxel_pair.first;
             
             const TsdfVoxel& voxel = block.getVoxelByVoxelIndex(voxel_idx);
+            checked++;
+            
+            if (voxel.ever_free) has_ever_free++;
+            if (static_cast<int>(voxel.last_occupied) == frame_counter) has_occupied++;
             
             // Check if this ever-free voxel is currently occupied
             // ever_free and last occupied check
@@ -280,6 +308,13 @@ std::vector<voxblox::VoxelKey> MotionDetector::findOccupiedEverFreeVoxels(
                 }
             }
         }
+    }
+    
+    if (config_.verbose) {
+        std::cout << "  Point map voxels: " << checked 
+                  << ", has_ever_free: " << has_ever_free
+                  << ", has_occupied: " << has_occupied
+                  << ", seeds: " << seeds.size() << std::endl;
     }
     
     return seeds;
